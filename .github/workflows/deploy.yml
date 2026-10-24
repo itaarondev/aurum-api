@@ -24,7 +24,7 @@ jobs:
         env:
           REGISTRY: acraurumdeveus.azurecr.io
           REPOSITORY: aurum-api
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
