@@ -20,6 +20,9 @@ builder.Services.AddControllers();
 builder.Services.AddApplicationServices();
 builder.Services.AddExternalServices(builder.Configuration);
 
+// Registro de Application Insights
+builder.Services.AddApplicationInsightsTelemetry();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

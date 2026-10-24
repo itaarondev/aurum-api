@@ -7,10 +7,12 @@ namespace Aurum.Api.Middlewares
     public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-        public ExceptionHandlingMiddleware(RequestDelegate next)
+        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -21,7 +23,32 @@ namespace Aurum.Api.Middlewares
             }
             catch (Exception ex)
             {
+                // Clasificamos el nivel del log inteligentemente para Application Insights
+                HandleLogByExceptionType(ex);
+
                 await HandleExceptionAsync(context, ex);
+            }
+        }
+
+        private void HandleLogByExceptionType(Exception ex)
+        {
+            switch (ex)
+            {
+                case ValidationException:
+                case KeyNotFoundException:
+                case UnauthorizedAccessException:
+                    // Errores de cliente o negocio esperados -> Warning (No ensucian las alertas de 500)
+                    _logger.LogWarning(ex, "Advertencia de negocio/cliente: {Message}", ex.Message);
+                    break;
+
+                case InvalidOperationException conflictEx when conflictEx.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase):
+                    _logger.LogWarning(ex, "Conflicto de recurso existente: {Message}", ex.Message);
+                    break;
+
+                default:
+                    // Errores internos reales del servidor -> Error Crítico (Va directo a las alertas de Application Insights)
+                    _logger.LogError(ex, "Ocurrió un error interno no controlado: {Message}", ex.Message);
+                    break;
             }
         }
 

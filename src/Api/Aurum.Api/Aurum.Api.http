@@ -1,4 +1,5 @@
-@Aurum.Api_HostAddress = https://localhost:7038
+# @Aurum.Api_HostAddress = https://localhost:7038
+@Aurum.Api_HostAddress = https://as-aurum-dev-api-eus-fqbda8bvb7c3bpcw.westus3-01.azurewebsites.net
 
 ### ==========================================
 ### 1. PRUEBAS DE CONTENEDORES
