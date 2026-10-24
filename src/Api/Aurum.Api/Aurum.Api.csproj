@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>c1501135-0f81-40c7-8762-0aa70061adcc</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.2" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Aurum.Application\Aurum.Application.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Aurum.External\Aurum.External.csproj" />
+  </ItemGroup>
+
+</Project>

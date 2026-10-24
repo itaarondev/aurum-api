@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Dockerfile" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Api/">
+    <Project Path="src/Api/Aurum.Api/Aurum.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/Aurum.Application/Aurum.Application.csproj" />
+    <Project Path="src/Core/Aurum.Domain/Aurum.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/Aurum.External/Aurum.External.csproj" Id="0b6e2485-8947-4689-a0f9-68b8fc86168f" />
+    <Project Path="src/Infrastructure/Aurum.Persistence/Aurum.Persistence.csproj" />
+  </Folder>
+</Solution>

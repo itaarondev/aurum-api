@@ -1,0 +1,38 @@
+@Aurum.Api_HostAddress = https://localhost:7038
+
+### ==========================================
+### 1. PRUEBAS DE CONTENEDORES
+### ==========================================
+
+### Crear Contenedor (Caso Válido)
+POST {{Aurum.Api_HostAddress}}/api/files/container
+Content-Type: application/json
+
+{
+  "containerName": "test"
+}
+
+###
+
+### Crear Contenedor (Caso Inválido - Disparará el 400 Bad Request de FluentValidation)
+POST {{Aurum.Api_HostAddress}}/api/files/container
+Content-Type: application/json
+
+{
+  "containerName": "CONTENEDOR_MAYUSCULAS_INVALIDO!"
+}
+
+###
+
+### Eliminar Contenedor (Caso Válido)
+DELETE {{Aurum.Api_HostAddress}}/api/files/container/test
+
+### ==========================================
+### 2. PRUEBAS DE ARCHIVOS (BLOBS)
+### ==========================================
+
+### Eliminar Archivo
+DELETE {{Aurum.Api_HostAddress}}/api/files/frontend/angular.jpg
+
+### Obtener Archivo
+GET {{Aurum.Api_HostAddress}}/api/files/frontend/angular.jpg

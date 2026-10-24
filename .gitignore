@@ -1,0 +1,24 @@
+# Visual Studio / .vs
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build / Bin / Obj
+[Bb]in/
+[Oo]bj/
+**/bin/
+**/obj/
+
+# .NET Test Results
+*.trx
+*.coverage
+*.coveragexml
+
+# Azure / Publish Profiles
+**/Properties/PublishProfiles/*.pubxml.user
+
+# OS generated files
+Thumbs.db
+.DS_Store

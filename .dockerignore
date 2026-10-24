@@ -1,0 +1,16 @@
+# Directorios de compilación y VS
+**/bin/
+**/obj/
+.vs/
+.git/
+.github/
+
+# Archivos de entorno y configuración local
+*.env
+*.user
+*.suo
+
+# Documentación y pruebas locales
+README.md
+**/Test/
+**/Tests/
