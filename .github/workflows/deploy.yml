@@ -29,6 +29,9 @@ jobs:
 
       - name: 5. Aplicar Migraciones en Azure SQL (Automatizado)
         run: |
+          # Restauramos las dependencias para que se generen los archivos de assets necesarios
+          dotnet restore src/Api/Aurum.Api/Aurum.Api.csproj
+
           # Obtenemos el Token de Entra ID para la base de datos a través de Azure CLI
           ACCESS_TOKEN=$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
 
