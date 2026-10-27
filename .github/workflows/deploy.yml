@@ -40,7 +40,7 @@ jobs:
 
       - name: 6. Iniciar sesión en Azure Container Registry (ACR)
         run: |
-          az acr login --name acraurumdeveus-hmcndzgmf2hegvd3
+          az acr login --name acraurumdeveushmcndzgmf2hegvd3
 
       - name: 7. Compilar y publicar imagen de Docker
         env:
