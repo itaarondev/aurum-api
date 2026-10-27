@@ -1,10 +1,11 @@
 ﻿using Aurum.Application.Common.Interfaces;
+using Aurum.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 
 namespace Aurum.Application.Features.Files.Commands
 {
-    public record UploadFileCommand(Stream FileStream, string FileName, string ContainerName) : IRequest<string>;
+    public record UploadFileCommand(Stream FileStream, string FileName, string ContainerName) : IRequest<Result<string>>;
 
     public class UploadFileCommandValidator : AbstractValidator<UploadFileCommand>
     {
@@ -23,7 +24,7 @@ namespace Aurum.Application.Features.Files.Commands
         }
     }
 
-    public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, string>
+    public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Result<string>>
     {
         private readonly IBlobStorageService _blobStorageService;
 
@@ -32,12 +33,13 @@ namespace Aurum.Application.Features.Files.Commands
             _blobStorageService = blobStorageService;
         }
 
-        public async Task<string> Handle(UploadFileCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(UploadFileCommand request, CancellationToken cancellationToken)
         {
             // Generamos un nombre único para evitar colisiones en Azure
             // var uniqueFileName = $"{Guid.NewGuid()}_{request.FileName}";
 
-            return await _blobStorageService.UploadFileAsync(request.FileStream, request.ContainerName, request.FileName);
+            var uri = await _blobStorageService.UploadFileAsync(request.FileStream, request.ContainerName, request.FileName);
+            return Result<string>.Success(uri);
         }
     }
 }

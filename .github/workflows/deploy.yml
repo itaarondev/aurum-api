@@ -13,14 +13,36 @@ jobs:
       - name: 1. Checkout del código fuente
         uses: actions/checkout@v4
 
-      - name: 2. Iniciar sesión en Azure Container Registry (ACR)
-        uses: azure/docker-login@v1
+      - name: 2. Configurar SDK de .NET 10
+        uses: actions/setup-dotnet@v4
         with:
-          login-server: acraurumdeveus-hmcndzgmf2hegvd3.azurecr.io
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          dotnet-version: "10.0.x"
 
-      - name: 3. Compilar y publicar imagen de Docker
+      - name: 3. Autenticarse en Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 4. Instalar herramientas de Entity Framework Core
+        run: |
+          dotnet tool install --global dotnet-ef
+
+      - name: 5. Aplicar Migraciones en Azure SQL (Automatizado)
+        run: |
+          # Obtenemos el Token de Entra ID para la base de datos a través de Azure CLI
+          ACCESS_TOKEN=$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
+
+          # Construimos la cadena de conexión con el Access Token
+          SQL_CONN_STR="Server=tcp:server-aurum-dev-eus.database.windows.net,1433;Initial Catalog=AurumDb;Encrypt=True;TrustServerCertificate=False;"
+
+          # Ejecutamos las migraciones pasando el token de autenticación
+          dotnet ef database update --connection "$SQL_CONN_STR" -- --access-token "$ACCESS_TOKEN"
+
+      - name: 6. Iniciar sesión en Azure Container Registry (ACR)
+        run: |
+          az acr login --name acraurumdeveus-hmcndzgmf2hegvd3
+
+      - name: 7. Compilar y publicar imagen de Docker
         env:
           REGISTRY: acraurumdeveus-hmcndzgmf2hegvd3.azurecr.io
           REPOSITORY: aurum-api
@@ -30,7 +52,7 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:latest
 
-      - name: 4. Desplegar contenedor en Azure App Service
+      - name: 8. Desplegar contenedor en Azure App Service
         uses: azure/webapps-deploy@v2
         with:
           app-name: "as-aurum-dev-api-eus"

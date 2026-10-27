@@ -1,4 +1,5 @@
 ﻿using Aurum.Application.Common.Interfaces;
+using Aurum.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 using System;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace Aurum.Application.Features.Files.Commands
 {
-    public record DeleteContainerCommand(string ContainerName) : IRequest<Unit>;
+    public record DeleteContainerCommand(string ContainerName) : IRequest<Result<string>>;
 
     public class DeleteContainerCommandValidator : AbstractValidator<DeleteContainerCommand>
     {
@@ -21,7 +22,7 @@ namespace Aurum.Application.Features.Files.Commands
         }
     }
 
-    public class DeleteContainerCommandHandler : IRequestHandler<DeleteContainerCommand, Unit>
+    public class DeleteContainerCommandHandler : IRequestHandler<DeleteContainerCommand, Result<string>>
     {
         private readonly IBlobStorageService _blobStorageService;
 
@@ -30,12 +31,12 @@ namespace Aurum.Application.Features.Files.Commands
             _blobStorageService = blobStorageService;
         }
 
-        public async Task<Unit> Handle(DeleteContainerCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(DeleteContainerCommand request, CancellationToken cancellationToken)
         {
             // Llamamos al servicio de infraestructura para eliminar el contenedor si existe
             await _blobStorageService.DeleteContainerAsync(request.ContainerName);
 
-            return Unit.Value;
+            return Result<string>.Success($"Contenedor '{request.ContainerName}' eliminado exitosamente.");
         }
     }
 }

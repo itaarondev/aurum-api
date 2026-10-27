@@ -1,4 +1,5 @@
 ﻿using Aurum.Application.Common.Interfaces;
+using Aurum.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 using System;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace Aurum.Application.Features.Files.Commands
 {
-    public record DeleteFileCommand(string ContainerName, string FileName) : IRequest<bool>;
+    public record DeleteFileCommand(string ContainerName, string FileName) : IRequest<Result<string>>;
 
     public class DeleteFileCommandValidator : AbstractValidator<DeleteFileCommand>
     {
@@ -25,7 +26,7 @@ namespace Aurum.Application.Features.Files.Commands
         }
     }
 
-    public class DeleteFileCommandHandler : IRequestHandler<DeleteFileCommand, bool>
+    public class DeleteFileCommandHandler : IRequestHandler<DeleteFileCommand, Result<string>>
     {
         private readonly IBlobStorageService _blobStorageService;
 
@@ -34,9 +35,14 @@ namespace Aurum.Application.Features.Files.Commands
             _blobStorageService = blobStorageService;
         }
 
-        public async Task<bool> Handle(DeleteFileCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(DeleteFileCommand request, CancellationToken cancellationToken)
         {
-            return await _blobStorageService.DeleteFileAsync(request.ContainerName, request.FileName);
+            var delete = await _blobStorageService.DeleteFileAsync(request.ContainerName, request.FileName);
+            if (!delete)
+            {
+                return Result<string>.Failure(new[] { "El archivo no fue encontrado en el contenedor especificado." });
+            }
+            return Result<string>.Success("Archivo eliminado exitosamente");
         }
     }
 }

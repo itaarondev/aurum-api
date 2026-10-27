@@ -57,77 +57,58 @@ namespace Aurum.Api.Middlewares
             context.Response.ContentType = "application/json";
             var response = context.Response;
 
-            // Estructura base de la respuesta de error
-            object errorResponse;
+            string message = string.Empty;
+            List<string> errorList = new();
 
             switch (exception)
             {
                 // 1. Errores de validación (FluentValidation) -> 400 Bad Request
                 case ValidationException validationEx:
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
-
-                    var validationErrors = validationEx.Errors
-                        .GroupBy(e => e.PropertyName)
-                        .ToDictionary(
-                            group => group.Key,
-                            group => group.Select(e => e.ErrorMessage).ToArray()
-                        );
-
-                    errorResponse = new
-                    {
-                        status = (int)HttpStatusCode.BadRequest,
-                        message = "Falló la validación de los datos de entrada.",
-                        errors = validationErrors
-                    };
+                    message = "Falló la validación de los datos de entrada.";
+                    errorList = validationEx.Errors.Select(e => e.ErrorMessage).ToList();
                     break;
 
-                // 2. Recurso no encontrado (Ej. NotFoundException personalizada) -> 404 Not Found
+                // 2. Recurso no encontrado -> 404 Not Found
                 case KeyNotFoundException notFoundEx:
                     response.StatusCode = (int)HttpStatusCode.NotFound;
-                    errorResponse = new
-                    {
-                        status = (int)HttpStatusCode.NotFound,
-                        message = notFoundEx.Message,
-                        errors = (object)null
-                    };
+                    message = notFoundEx.Message;
+                    errorList.Add(notFoundEx.Message);
                     break;
 
-                // 3. Conflictos de negocio (Ej. el contenedor ya existe) -> 409 Conflict
+                // 3. Conflictos de negocio -> 409 Conflict
                 case InvalidOperationException conflictEx when conflictEx.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase):
                     response.StatusCode = (int)HttpStatusCode.Conflict;
-                    errorResponse = new
-                    {
-                        status = (int)HttpStatusCode.Conflict,
-                        message = exception.Message,
-                        errors = (object)null
-                    };
+                    message = conflictEx.Message;
+                    errorList.Add(conflictEx.Message);
                     break;
 
-                // 4. No autorizado / Sin credenciales válidas -> 401 Unauthorized
+                // 4. No autorizado -> 401 Unauthorized
                 case UnauthorizedAccessException unauthorizedEx:
                     response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    errorResponse = new
-                    {
-                        status = (int)HttpStatusCode.Unauthorized,
-                        message = string.IsNullOrEmpty(unauthorizedEx.Message) ? "No autorizado." : unauthorizedEx.Message,
-                        errors = (object)null
-                    };
+                    message = string.IsNullOrEmpty(unauthorizedEx.Message) ? "No autorizado." : unauthorizedEx.Message;
+                    errorList.Add(message);
                     break;
 
-                // 5. Cualquier otro error inesperado -> 500 Internal Server Error
+                // 5. Error interno inesperado -> 500 Internal Server Error
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    errorResponse = new
-                    {
-                        status = (int)HttpStatusCode.InternalServerError,
-                        message = "Ocurrió un error interno en el servidor.",
-                        // Opcional: puedes exponer exception.Message solo en ambiente de desarrollo
-                        details = exception.Message
-                    };
+                    message = "Ocurrió un error interno en el servidor.";
+
+                    var isDevelopment = context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment();
+                    errorList.Add(isDevelopment ? exception.Message : message);
                     break;
             }
 
-            var result = JsonSerializer.Serialize(errorResponse);
+            var errorResult = new
+            {
+                succeeded = false,
+                message = message,
+                errors = errorList
+            };
+
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var result = JsonSerializer.Serialize(errorResult, options);
             await context.Response.WriteAsync(result, context.RequestAborted);
         }
     }

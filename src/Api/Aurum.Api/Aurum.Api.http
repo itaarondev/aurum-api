@@ -1,8 +1,22 @@
-# @Aurum.Api_HostAddress = https://localhost:7038
-@Aurum.Api_HostAddress = https://as-aurum-dev-api-eus-fqbda8bvb7c3bpcw.westus3-01.azurewebsites.net
+@Aurum.Api_HostAddress = https://localhost:7038
+# @Aurum.Api_HostAddress = https://as-aurum-dev-api-eus-fqbda8bvb7c3bpcw.westus3-01.azurewebsites.net
+
 
 ### ==========================================
-### 1. PRUEBAS DE CONTENEDORES
+### PRUEBAS DE REGISTRO DE USUARIO
+### ==========================================
+POST {{HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "aaron.hurtado@aurum.com",
+  "password": "abc123"
+}
+
+
+
+### ==========================================
+### PRUEBAS DE CONTENEDORES
 ### ==========================================
 
 ### Crear Contenedor (Caso Válido)
@@ -29,7 +43,7 @@ Content-Type: application/json
 DELETE {{Aurum.Api_HostAddress}}/api/files/container/test
 
 ### ==========================================
-### 2. PRUEBAS DE ARCHIVOS (BLOBS)
+### PRUEBAS DE ARCHIVOS (BLOBS)
 ### ==========================================
 
 ### Eliminar Archivo

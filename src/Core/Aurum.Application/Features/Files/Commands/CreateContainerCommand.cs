@@ -1,13 +1,11 @@
 ﻿using Aurum.Application.Common.Interfaces;
+using Aurum.Application.Common.Models;
 using FluentValidation;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Aurum.Application.Features.Files.Commands
 {    
-    public record CreateContainerCommand(string ContainerName) : IRequest<Unit>;
+    public record CreateContainerCommand(string ContainerName) : IRequest<Result<string>>;
 
     public class CreateContainerCommandValidator : AbstractValidator<CreateContainerCommand>
     {
@@ -21,7 +19,7 @@ namespace Aurum.Application.Features.Files.Commands
         }
     }
 
-    public class CreateContainerCommandHandler : IRequestHandler<CreateContainerCommand, Unit>
+    public class CreateContainerCommandHandler : IRequestHandler<CreateContainerCommand, Result<string>>
     {
         private readonly IBlobStorageService _blobStorageService;
 
@@ -30,13 +28,12 @@ namespace Aurum.Application.Features.Files.Commands
             _blobStorageService = blobStorageService;
         }
 
-        public async Task<Unit> Handle(CreateContainerCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(CreateContainerCommand request, CancellationToken cancellationToken)
         {
             // Llamamos al servicio de infraestructura para crear el contenedor
             await _blobStorageService.CreateContainerAsync(request.ContainerName);
 
-            // Unit es el equivalente a "void" en MediatR
-            return Unit.Value;
+            return Result<string>.Success($"Contenedor '{request.ContainerName}' creado exitosamente.");
         }
     }
 }

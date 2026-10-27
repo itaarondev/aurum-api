@@ -11,12 +11,18 @@
     <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.2" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.14">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Aurum.Application\Aurum.Application.csproj" />
     <ProjectReference Include="..\..\Infrastructure\Aurum.External\Aurum.External.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Aurum.Persistence\Aurum.Persistence.csproj" />
   </ItemGroup>
 
 </Project>
