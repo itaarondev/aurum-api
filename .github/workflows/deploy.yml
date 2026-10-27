@@ -35,8 +35,8 @@ jobs:
           # Construimos la cadena de conexión usando Active Directory Default para aprovechar la sesión de Azure CLI
           SQL_CONN_STR="Server=tcp:server-aurum-dev-eus.database.windows.net,1433;Initial Catalog=AurumDb;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default;"
           
-          # Ejecutamos las migraciones apuntando a Persistence y usando Api como startup project
-          dotnet ef database update --project src/Infrastructure/Aur.Persistence --startup-project src/Api/Aurum.Api --connection "$SQL_CONN_STR"
+          # Corregido el nombre de la carpeta a Aurum.Persistence
+          dotnet ef database update --project src/Infrastructure/Aurum.Persistence --startup-project src/Api/Aurum.Api --connection "$SQL_CONN_STR"
 
       - name: 6. Iniciar sesión en Azure Container Registry (ACR)
         run: |
