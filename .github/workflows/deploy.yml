@@ -32,14 +32,11 @@ jobs:
           # Restauramos las dependencias
           dotnet restore src/Api/Aurum.Api/Aurum.Api.csproj
 
-          # Obtenemos el Token de Entra ID para la base de datos a través de Azure CLI
-          ACCESS_TOKEN=$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
+          # Construimos la cadena de conexión usando Active Directory Default para aprovechar la sesión de Azure CLI
+          SQL_CONN_STR="Server=tcp:server-aurum-dev-eus.database.windows.net,1433;Initial Catalog=AurumDb;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default;"
           
-          # Construimos la cadena de conexión estándar (sin palabras clave inválidas)
-          SQL_CONN_STR="Server=tcp:server-aurum-dev-eus.database.windows.net,1433;Initial Catalog=AurumDb;Encrypt=True;TrustServerCertificate=False;"
-          
-          # Ejecutamos las migraciones pasando la conexión y el token en su argumento oficial
-          dotnet ef database update --project src/Infrastructure/Aurum.Persistence --startup-project src/Api/Aurum.Api --connection "$SQL_CONN_STR" --access-token "$ACCESS_TOKEN"
+          # Ejecutamos las migraciones apuntando a Persistence y usando Api como startup project
+          dotnet ef database update --project src/Infrastructure/Aur.Persistence --startup-project src/Api/Aurum.Api --connection "$SQL_CONN_STR"
 
       - name: 6. Iniciar sesión en Azure Container Registry (ACR)
         run: |
