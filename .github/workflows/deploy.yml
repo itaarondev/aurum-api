@@ -40,11 +40,11 @@ jobs:
 
       - name: 6. Iniciar sesión en Azure Container Registry (ACR)
         run: |
-          az acr login --name acraurumdeveushmcndzgmf2hegvd3
+          az acr login --name acraurumdeveus
 
       - name: 7. Compilar y publicar imagen de Docker
         env:
-          REGISTRY: acraurumdeveus-hmcndzgmf2hegvd3.azurecr.io
+          REGISTRY: acraurumdeveus.azurecr.io
           REPOSITORY: aurum-api
           IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
         run: |
@@ -57,4 +57,4 @@ jobs:
         with:
           app-name: "as-aurum-dev-api-eus"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: "acraurumdeveus-hmcndzgmf2hegvd3.azurecr.io/aurum-api:latest"
+          images: "acraurumdeveus.azurecr.io/aurum-api:latest"
