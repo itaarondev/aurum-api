@@ -29,17 +29,17 @@ jobs:
 
       - name: 5. Aplicar Migraciones en Azure SQL (Automatizado)
         run: |
-          # Restauramos las dependencias para que se generen los archivos de assets necesarios
+          # Restauramos las dependencias
           dotnet restore src/Api/Aurum.Api/Aurum.Api.csproj
 
           # Obtenemos el Token de Entra ID para la base de datos a través de Azure CLI
           ACCESS_TOKEN=$(az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv)
-
-          # Construimos la cadena de conexión con el Access Token
-          SQL_CONN_STR="Server=tcp:server-aurum-dev-eus.database.windows.net,1433;Initial Catalog=AurumDb;Encrypt=True;TrustServerCertificate=False;"
-
-          # Ejecutamos las migraciones apuntando a Persistence y usando Api como startup project
-          dotnet ef database update --project src/Infrastructure/Aurum.Persistence --startup-project src/Api/Aurum.Api --connection "$SQL_CONN_STR" -- --access-token "$ACCESS_TOKEN"
+          
+          # Construimos la cadena de conexión integrando el Access Token de Entra ID
+          SQL_CONN_STR="Server=tcp:server-aurum-dev-eus.database.windows.net,1433;Initial Catalog=AurumDb;Encrypt=True;TrustServerCertificate=False;Access Token=$ACCESS_TOKEN;"
+          
+          # Ejecutamos las migraciones pasando la cadena completa con el token integrado
+          dotnet ef database update --project src/Infrastructure/Aurum.Persistence --startup-project src/Api/Aurum.Api --connection "$SQL_CONN_STR"
 
       - name: 6. Iniciar sesión en Azure Container Registry (ACR)
         run: |
