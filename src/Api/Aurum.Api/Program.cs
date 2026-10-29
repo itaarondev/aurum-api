@@ -42,9 +42,6 @@ if (app.Environment.IsDevelopment())
 // Seeder del usuario admin puede correr en cualquier entorno
 await ApplicationDbContextSeed.SeedDefaultUserAsync(app.Services);
 
-// Add middlewares global
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
 // Configure the HTTP request pipeline
 app.UseHttpsRedirection();
 
@@ -55,6 +52,9 @@ app.UseCors("AllowLocalClient");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Add middlewares global
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Mapeo de todas las rebanadas verticales
 app.MapApiEndpoints();
