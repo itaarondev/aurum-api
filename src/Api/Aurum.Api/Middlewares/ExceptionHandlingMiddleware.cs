@@ -18,12 +18,22 @@ namespace Aurum.Api.Middlewares
         public async Task InvokeAsync(HttpContext context)
         {
             // Extraemos la información de auditoría del usuario autenticado (si lo está)
-            string userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
-            string userEmail = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "N/A";
-            string tokenJti = context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value ?? "N/A";
+            string userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                         ?? context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+                         ?? context.User?.FindFirst("sub")?.Value
+                         ?? "Anonymous";
+
+            string userEmail = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                          ?? context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email)?.Value
+                          ?? context.User?.FindFirst("email")?.Value
+                          ?? "N/A";
+
+            string tokenJti = context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value
+                           ?? context.User?.FindFirst("jti")?.Value
+                           ?? "N/A";
 
             // Creamos un ámbito de log (Log Scope) para que toda esta traza viaje junta en los logs
-            using (_logger.BeginScope(new Dictionary<object, object>
+            using (_logger.BeginScope(new Dictionary<string, object>
             {
                 ["UserId"] = userId,
                 ["UserEmail"] = userEmail,
