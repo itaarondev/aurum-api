@@ -32,6 +32,13 @@ namespace Aurum.Api.Middlewares
                            ?? context.User?.FindFirst("jti")?.Value
                            ?? "N/A";
 
+            // TELEMETRY CLIENT: Inyección nativa en Azure Application Insights (Para Requests y Exceptions)
+            var telemetryClient = context.RequestServices.GetService<Microsoft.ApplicationInsights.TelemetryClient>();
+            if (telemetryClient != null && userId != "Anonymous")
+            {
+                telemetryClient.Context.User.AuthenticatedUserId = userId;
+            }
+
             // Creamos un ámbito de log (Log Scope) para que toda esta traza viaje junta en los logs
             using (_logger.BeginScope(new Dictionary<string, object>
             {
