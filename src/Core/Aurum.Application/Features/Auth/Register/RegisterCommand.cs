@@ -1,11 +1,12 @@
 ﻿using Aurum.Application.Common.Interfaces;
 using Aurum.Application.Common.Models;
+using Aurum.Domain.Enums;
 using FluentValidation;
 using MediatR;
 
 namespace Aurum.Application.Features.Auth.Register
 {
-    public record RegisterCommand(string Email, string Password, string ConfirmPassword) : IRequest<Result<string>>;
+    public record RegisterCommand(string Email, string Password, string ConfirmPassword, UserRole Role) : IRequest<Result<string>>;
     public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
     {
         public RegisterCommandValidator()
@@ -20,6 +21,9 @@ namespace Aurum.Application.Features.Auth.Register
 
             RuleFor(x => x.ConfirmPassword)
                 .Equal(x => x.Password).WithMessage("Las contraseñas no coinciden.");
+
+            RuleFor(x => x.Role)
+                .IsInEnum().WithMessage("El rol especificado no es válido.");
         }
     }
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<string>>
@@ -33,7 +37,7 @@ namespace Aurum.Application.Features.Auth.Register
 
         public async Task<Result<string>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
-            return await _identityService.RegisterUserAsync(request.Email, request.Password);
+            return await _identityService.RegisterUserAsync(request.Email, request.Password, request.Role);
         }
     }
 }

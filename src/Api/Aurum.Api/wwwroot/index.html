@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Prueba de Autenticación con Cookies - Aurum</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        background: #f4f4f9;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      input {
+        display: block;
+        margin-bottom: 10px;
+        padding: 8px;
+        width: 100%;
+        max-width: 300px;
+      }
+      button {
+        padding: 10px 15px;
+        background: #0078d4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #005a9e;
+      }
+      pre {
+        background: #eee;
+        padding: 10px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>1. Iniciar Sesión</h2>
+      <input
+        type="email"
+        id="email"
+        placeholder="Correo electrónico"
+        value="admin@aurum.com"
+      />
+      <input
+        type="password"
+        id="password"
+        placeholder="Contraseña"
+        value="Abc123*"
+      />
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div class="card">
+        <h2>2. Probar Recurso Protegido ([Authorize])</h2>
+        <p>
+            Haz clic para hacer una petición a un endpoint protegido. El navegador
+            mandará la cookie automáticamente.
+        </p>
+        <button onclick="testProtectedRoute()">Consultar Datos Protegidos</button>
+        <button onclick="manualRefreshToken()" style="background: #107c10">
+            Refrescar Token Manualmente
+        </button>
+        <button onclick="window.location.href='https://localhost:7038/api/auth/signin-google'" style="background: #db4437; color: white;">
+            Iniciar sesión con Google
+        </button>
+    </div>
+
+    <div class="card">
+      <h2>Resultado de la Consola:</h2>
+      <pre id="output">Esperando acciones...</pre>
+    </div>
+
+    <script>
+      // IMPORTANTE: credentials: 'include' le ordena al navegador que envíe y reciba las cookies de origen cruzado o local
+      const API_URL = "https://localhost:7038"; // Cambia al puerto de tu API si es diferente
+
+      async function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const response = await fetch(`${API_URL}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+            credentials: "include", // <-- Clave para que el navegador acepte la cookie HttpOnly
+          });
+
+          const data = await response.json();
+          document.getElementById("output").innerText =
+            `Login Response (${response.status}):\n` +
+            JSON.stringify(data, null, 2);
+
+          if (response.ok) {
+            alert(
+              "¡Login exitoso! La cookie HttpOnly ya está guardada en el navegador.",
+            );
+          }
+        } catch (error) {
+          document.getElementById("output").innerText =
+            "Error en el login: " + error.message;
+        }
+      }
+
+      // Función auxiliar que engloba las peticiones con lógica de reintento automático (Interceptor nativo)
+      async function fetchWithAutoRefresh(url, options = {}) {
+        // Aseguramos que siempre mande las cookies
+        options.credentials = "include";
+
+        // 1. Intentamos la petición normal al recurso protegido
+        let response = await fetch(url, options);
+
+        // 2. Si obtenemos un 401 Unauthorized, significa que el Access Token expiró
+        if (response.status === 401) {
+          console.warn(
+            "Access Token expirado. Intentando refrescar automáticamente...",
+          );
+
+          // Disparamos la petición al endpoint de refresh-token (el navegador mandará sola la cookie del Refresh Token)
+          const refreshResponse = await fetch(
+            `${API_URL}/api/auth/refresh-token`,
+            {
+              method: "POST",
+              credentials: "include",
+            },
+          );
+
+          if (refreshResponse.ok) {
+            console.log(
+              "¡Token refrescado con éxito por debajo del agua! Reintentando petición original...",
+            );
+
+            // 3. Reintentamos la petición original que había fallado
+            response = await fetch(url, options);
+          } else {
+            console.error(
+              "El Refresh Token también expiró o es inválido. Es necesario re-loguearse.",
+            );
+            alert(
+              "Tu sesión ha expirado por completo. Por favor, vuelve a iniciar sesión.",
+            );
+          }
+        }
+
+        return response;
+      }
+
+      async function testProtectedRoute() {
+        try {
+          const containerName = "backend";
+          const fileName = "net10.jpg";
+
+          // Usamos nuestra función inteligente con auto-refresh
+          const response = await fetchWithAutoRefresh(
+            `${API_URL}/api/files/${containerName}/${fileName}`,
+          );
+
+          const text = await response.text();
+          document.getElementById("output").innerText =
+            `Protected Route Response (${response.status}):\n` + text;
+        } catch (error) {
+          document.getElementById("output").innerText =
+            "Error al consultar ruta protegida: " + error.message;
+        }
+      }
+
+      async function manualRefreshToken() {
+        try {
+          const response = await fetch(`${API_URL}/api/auth/refresh-token`, {
+            method: "POST",
+            credentials: "include",
+          });
+
+          const data = await response.json();
+          document.getElementById("output").innerText =
+            `Refresh Token Response (${response.status}):\n` +
+            JSON.stringify(data, null, 2);
+
+          if (response.ok) {
+            alert("¡Tokens renovados manualmente en las cookies!");
+          }
+        } catch (error) {
+          document.getElementById("output").innerText =
+            "Error al refrescar token: " + error.message;
+        }
+      }
+    </script>
+  </body>
+</html>

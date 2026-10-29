@@ -3,7 +3,7 @@ using Aurum.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 
-namespace Aurum.Application.Features.Files.Commands
+namespace Aurum.Application.Features.Files.CreateContainer
 {    
     public record CreateContainerCommand(string ContainerName) : IRequest<Result<string>>;
 

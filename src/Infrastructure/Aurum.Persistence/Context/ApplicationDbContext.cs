@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Aurum.Domain.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Aurum.Persistence.Context
 {
@@ -12,5 +10,13 @@ namespace Aurum.Persistence.Context
         {
         }
 
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        }
     }
 }

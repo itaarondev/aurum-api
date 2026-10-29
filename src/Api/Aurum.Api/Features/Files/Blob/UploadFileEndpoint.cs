@@ -1,4 +1,5 @@
-﻿using Aurum.Application.Features.Files.Commands;
+﻿
+using Aurum.Application.Features.Files.UploadFile;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,7 +21,8 @@ namespace Aurum.Api.Features.Files.Blob
             })
             .DisableAntiforgery() // Necesario si manejas subidas de archivos sin token de antifalsificación global
             .WithName("UploadFile")
-            .WithTags("Files");
+            .WithTags("Files")
+            .RequireAuthorization();
 
             return endpoints;
         }

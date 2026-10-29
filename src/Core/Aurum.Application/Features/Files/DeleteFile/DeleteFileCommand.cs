@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Aurum.Application.Features.Files.Commands
+namespace Aurum.Application.Features.Files.DeleteFile
 {
     public record DeleteFileCommand(string ContainerName, string FileName) : IRequest<Result<string>>;
 

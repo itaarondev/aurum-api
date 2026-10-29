@@ -4,7 +4,7 @@ using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Microsoft.AspNetCore.StaticFiles;
 
-namespace Aurum.External.BlobStorage
+namespace Aurum.External.Services.BlobStorage
 {
     public class BlobStorageService : IBlobStorageService
     {

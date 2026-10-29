@@ -1,5 +1,6 @@
 ﻿using Aurum.Application.Common.Interfaces;
-using Aurum.External.BlobStorage;
+using Aurum.External.Services.BlobStorage;
+using Aurum.External.Services.JwtToken;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +12,7 @@ namespace Aurum.External
     {
         public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
         {
-            // 1. Registro inteligente del BlobServiceClient (Desarrollo vs Producción)
+            // Registro inteligente del BlobServiceClient (Desarrollo vs Producción)
             services.AddSingleton(sp =>
             {
                 var connectionString = configuration.GetConnectionString("AzureStorage");
@@ -33,7 +34,10 @@ namespace Aurum.External
                 return new BlobServiceClient(blobUri, new DefaultAzureCredential());
             });
 
-            // 2. Registramos el servicio de aplicación vinculándolo con su implementación
+            // Registramos el servicio de JWT
+            services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+            // Registramos el servicio de aplicación vinculándolo con su implementación
             services.AddScoped<IBlobStorageService, BlobStorageService>();
 
             return services;

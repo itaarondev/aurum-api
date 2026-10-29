@@ -3,11 +3,11 @@ using Aurum.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 
-namespace Aurum.Application.Features.Files.Commands
+namespace Aurum.Application.Features.Files.GetFileSasUri
 {
-    public record GetFileSasUriCommand(string ContainerName, string FileName) : IRequest<Result<string>>;
+    public record GetFileSasUriQuery(string ContainerName, string FileName) : IRequest<Result<string>>;
 
-    public class GetFileSasUriCommandValidator : AbstractValidator<GetFileSasUriCommand>
+    public class GetFileSasUriCommandValidator : AbstractValidator<GetFileSasUriQuery>
     {
         public GetFileSasUriCommandValidator()
         {
@@ -21,7 +21,7 @@ namespace Aurum.Application.Features.Files.Commands
         }
     }
 
-    public class GetFileSasUriCommandHandler : IRequestHandler<GetFileSasUriCommand, Result<string>>
+    public class GetFileSasUriCommandHandler : IRequestHandler<GetFileSasUriQuery, Result<string>>
     {
         private readonly IBlobStorageService _blobStorageService;
 
@@ -30,7 +30,7 @@ namespace Aurum.Application.Features.Files.Commands
             _blobStorageService = blobStorageService;
         }
 
-        public async Task<Result<string>> Handle(GetFileSasUriCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(GetFileSasUriQuery request, CancellationToken cancellationToken)
         {
             var uri = await _blobStorageService.GetFileSasUriAsync(request.ContainerName, request.FileName, TimeSpan.FromMinutes(1));
             return Result<string>.Success(uri);

@@ -11,7 +11,7 @@ namespace Aurum.Api.Features.Auth.Register
         {
             endpoints.MapPost("/api/auth/register", async ([FromBody] RegisterRequest request, ISender mediator) =>
             {
-                var command = new RegisterCommand(request.Email, request.Password, request.ConfirmPassword);
+                var command = new RegisterCommand(request.Email, request.Password, request.ConfirmPassword, request.Role);
 
                 var result = await mediator.Send(command);
 
@@ -23,7 +23,8 @@ namespace Aurum.Api.Features.Auth.Register
                 return Results.Ok(new { message = "Usuario registrado exitosamente", email = result.Data });
             })
             .WithName("RegisterUser")
-            .WithTags("Auth");
+            .WithTags("Auth")
+            .RequireAuthorization(policy => policy.RequireRole("Admin"));
 
             return endpoints;
         }

@@ -1,6 +1,7 @@
 ﻿using Aurum.Application.Common.Interfaces;
 using Aurum.Persistence.Context;
 using Aurum.Persistence.Identity;
+using Aurum.Persistence.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +21,9 @@ namespace Aurum.Persistence
             services.AddIdentity<IdentityUser, IdentityRole>()
                  .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            services.AddTransient<IIdentityService, IdentityService>();
+            services.AddScoped<IIdentityService, IdentityService>();
+
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
             return services;
         }

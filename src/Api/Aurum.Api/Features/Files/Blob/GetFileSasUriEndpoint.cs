@@ -1,4 +1,4 @@
-﻿using Aurum.Application.Features.Files.Commands;
+﻿using Aurum.Application.Features.Files.GetFileSasUri;
 using MediatR;
 
 namespace Aurum.Api.Features.Files.Blob
@@ -9,14 +9,15 @@ namespace Aurum.Api.Features.Files.Blob
         {
             endpoints.MapGet("/api/files/{containerName}/{fileName}", async (string containerName, string fileName, ISender mediator) =>
             {
-                var command = new GetFileSasUriCommand(containerName, fileName);
+                var command = new GetFileSasUriQuery(containerName, fileName);
 
                 var result = await mediator.Send(command);
 
                 return Results.Ok(result);
             })
             .WithName("GetFileSasUri")
-            .WithTags("Files");
+            .WithTags("Files")
+            .RequireAuthorization(policy => policy.RequireRole("Admin"));
 
             return endpoints;
         }

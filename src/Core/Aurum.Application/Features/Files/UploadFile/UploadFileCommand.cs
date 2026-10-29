@@ -3,7 +3,7 @@ using Aurum.Application.Common.Models;
 using FluentValidation;
 using MediatR;
 
-namespace Aurum.Application.Features.Files.Commands
+namespace Aurum.Application.Features.Files.UploadFile
 {
     public record UploadFileCommand(Stream FileStream, string FileName, string ContainerName) : IRequest<Result<string>>;
 

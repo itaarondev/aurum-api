@@ -1,4 +1,4 @@
-﻿using Aurum.Application.Features.Files.Commands;
+﻿using Aurum.Application.Features.Files.DeleteFile;
 using MediatR;
 
 namespace Aurum.Api.Features.Files.Blob

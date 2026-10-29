@@ -1,9 +1,11 @@
-﻿using Aurum.Api.Features.Auth.Login;
+﻿using Aurum.Api.Features.Auth.Google;
+using Aurum.Api.Features.Auth.Login;
+using Aurum.Api.Features.Auth.RefreshToken;
 using Aurum.Api.Features.Auth.Register;
 using Aurum.Api.Features.Files.Blob;
 using Aurum.Api.Features.Files.Container;
 
-namespace Aurum.Api
+namespace Aurum.Api.Extensions
 {
     public static class EndpointRoutingExtensions
     {
@@ -17,6 +19,8 @@ namespace Aurum.Api
             app.MapUploadFileEndpoint();
             app.MapDeleteFileEndpoint();
             app.MapGetFileSasUriEndpoint();
+            app.MapRefreshTokenEndpoint();
+            app.MapGoogleAuthEndpoints();
 
             return app;
         }

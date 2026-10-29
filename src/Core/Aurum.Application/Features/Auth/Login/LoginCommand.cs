@@ -5,12 +5,7 @@ using MediatR;
 
 namespace Aurum.Application.Features.Auth.Login
 {
-    public record LoginCommand(string Email, string Password) : IRequest<Result<LoginUserDto>>;
-    public class LoginUserDto
-    {
-        public required string Id { get; set; }
-        public required string Email { get; set; }
-    };
+    public record LoginCommand(string Email, string Password) : IRequest<Result<LoginUserDto>>;    
     public class LoginCommandValidator : AbstractValidator<LoginCommand>
     {
         public LoginCommandValidator()

@@ -17,16 +17,32 @@ namespace Aurum.Api.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
-            try
-            {
-                await _next(context);
-            }
-            catch (Exception ex)
-            {
-                // Clasificamos el nivel del log inteligentemente para Application Insights
-                HandleLogByExceptionType(ex);
+            // Extraemos la información de auditoría del usuario autenticado (si lo está)
+            string userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
+            string userEmail = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "N/A";
+            string tokenJti = context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value ?? "N/A";
 
-                await HandleExceptionAsync(context, ex);
+            // Creamos un ámbito de log (Log Scope) para que toda esta traza viaje junta en los logs
+            using (_logger.BeginScope(new Dictionary<object, object>
+            {
+                ["UserId"] = userId,
+                ["UserEmail"] = userEmail,
+                ["TokenJti"] = tokenJti,
+                ["TraceId"] = context.TraceIdentifier
+            }))
+            {
+                try
+                {
+                    await _next(context);
+                }
+                catch (Exception ex)
+                {
+                    // Clasificamos el nivel del log inteligentemente para Application Insights
+                    HandleLogByExceptionType(ex);
+
+                    await HandleExceptionAsync(context, ex);
+                }
+
             }
         }
 
