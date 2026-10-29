@@ -5,6 +5,7 @@ using Aurum.External;
 using Aurum.Persistence;
 using Aurum.Persistence.Context;
 using Azure.Identity;
+using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,9 +36,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     await app.MigrateDatabaseAsync();
-    await ApplicationDbContextSeed.SeedDefaultUserAsync(app.Services);
     app.MapOpenApi();
 }
+
+// Seeder del usuario admin puede correr en cualquier entorno
+await ApplicationDbContextSeed.SeedDefaultUserAsync(app.Services);
 
 // Add middlewares global
 app.UseMiddleware<ExceptionHandlingMiddleware>();
