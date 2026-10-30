@@ -1,4 +1,6 @@
 ﻿using FluentValidation;
+using Microsoft.ApplicationInsights;
+using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.Json;
 
@@ -32,12 +34,12 @@ namespace Aurum.Api.Middlewares
                            ?? context.User?.FindFirst("jti")?.Value
                            ?? "N/A";
 
-            // TELEMETRY CLIENT: Inyección nativa en Azure Application Insights (Para Requests y Exceptions)
-            var telemetryClient = context.RequestServices.GetService<Microsoft.ApplicationInsights.TelemetryClient>();
-            if (telemetryClient != null && userId != "Anonymous")
-            {
-                telemetryClient.Context.User.AuthenticatedUserId = userId;
-            }
+            // TELEMETRY CLIENT: Inyección nativa en Azure Application Insights (Para Requests)
+            //var telemetryClient = context.RequestServices.GetService<TelemetryClient>();
+            //if (telemetryClient != null && userId != "Anonymous")
+            //{
+            //    telemetryClient.Context.User.AuthenticatedUserId = userId;
+            //}
 
             // Creamos un ámbito de log (Log Scope) para que toda esta traza viaje junta en los logs
             using (_logger.BeginScope(new Dictionary<string, object>
@@ -55,17 +57,7 @@ namespace Aurum.Api.Middlewares
                 catch (Exception ex)
                 {
                     // Clasificamos el nivel del log inteligentemente para Application Insights
-                    HandleLogByExceptionType(ex);
-
-                    if (telemetryClient != null)
-                    {
-                        telemetryClient.TrackException(ex, new Dictionary<string, string>
-                        {
-                            ["UserId"] = userId,
-                            ["UserEmail"] = userEmail,
-                            ["TokenJti"] = tokenJti
-                        });
-                    }
+                    HandleLogByExceptionType(ex, context, userId, userEmail, tokenJti);
 
                     await HandleExceptionAsync(context, ex);
                 }
@@ -73,8 +65,8 @@ namespace Aurum.Api.Middlewares
             }
         }
 
-        private void HandleLogByExceptionType(Exception ex)
-        {
+        private void HandleLogByExceptionType(Exception ex, HttpContext context, string userId, string userEmail, string tokenJti)
+        {   
             switch (ex)
             {
                 case ValidationException:
@@ -91,6 +83,22 @@ namespace Aurum.Api.Middlewares
                 default:
                     // Errores internos reales del servidor -> Error Crítico (Va directo a las alertas de Application Insights)
                     _logger.LogError(ex, "Ocurrió un error interno no controlado: {Message}", ex.Message);
+
+                    var telemetryClient = context.RequestServices.GetService<TelemetryClient>();
+                    if (telemetryClient != null)
+                    {
+                        var exceptionTelemetry = new Microsoft.ApplicationInsights.DataContracts.ExceptionTelemetry(ex)
+                        {
+                            SeverityLevel = Microsoft.ApplicationInsights.DataContracts.SeverityLevel.Error
+                        };
+
+                        exceptionTelemetry.Context.User.AuthenticatedUserId = userId;
+                        exceptionTelemetry.Properties["UserId"] = userId;
+                        exceptionTelemetry.Properties["UserEmail"] = userEmail;
+                        exceptionTelemetry.Properties["TokenJti"] = tokenJti;
+
+                        telemetryClient.TrackException(exceptionTelemetry);
+                    }
                     break;
             }
         }
