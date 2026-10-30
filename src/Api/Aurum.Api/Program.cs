@@ -32,11 +32,17 @@ if (builder.Environment.IsProduction())
 
 var app = builder.Build();
 
-// Configuración obligatoria para Azure App Service (Debe ir al principio absoluto)
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+// Configuración obligatoria para Azure App Service
+var forwardedOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+};
+
+// Limpiamos las restricciones usando la propiedad moderna
+forwardedOptions.KnownIPNetworks.Clear();
+forwardedOptions.KnownProxies.Clear();
+
+app.UseForwardedHeaders(forwardedOptions);
 
 // Aplica migraciones automáticamente al arrancar de forma limpia (solo desarrollo)
 if (app.Environment.IsDevelopment())
