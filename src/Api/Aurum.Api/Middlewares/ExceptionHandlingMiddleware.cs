@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
 using Microsoft.ApplicationInsights;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Text.Json;
 
@@ -19,21 +18,6 @@ namespace Aurum.Api.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Extraemos la información de auditoría del usuario autenticado (si lo está)
-            string userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                         ?? context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
-                         ?? context.User?.FindFirst("sub")?.Value
-                         ?? "Anonymous";
-
-            string userEmail = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                          ?? context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email)?.Value
-                          ?? context.User?.FindFirst("email")?.Value
-                          ?? "N/A";
-
-            string tokenJti = context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value
-                           ?? context.User?.FindFirst("jti")?.Value
-                           ?? "N/A";
-
             // TELEMETRY CLIENT: Inyección nativa en Azure Application Insights (Para Requests)
             //var telemetryClient = context.RequestServices.GetService<TelemetryClient>();
             //if (telemetryClient != null && userId != "Anonymous")
@@ -41,12 +25,16 @@ namespace Aurum.Api.Middlewares
             //    telemetryClient.Context.User.AuthenticatedUserId = userId;
             //}
 
+            var info = SetModelInfoErrorTelemetry(context);
+
             // Creamos un ámbito de log (Log Scope) para que toda esta traza viaje junta en los logs
             using (_logger.BeginScope(new Dictionary<string, object>
             {
-                ["UserId"] = userId,
-                ["UserEmail"] = userEmail,
-                ["TokenJti"] = tokenJti,
+                ["UserId"] = info.userId,
+                ["UserEmail"] = info.userEmail,
+                ["TokenJti"] = info.tokenJti,
+                ["UserAgent"] = info.userAgent,
+                ["ClientIp"] = info.clientIp,
                 ["TraceId"] = context.TraceIdentifier
             }))
             {
@@ -57,15 +45,14 @@ namespace Aurum.Api.Middlewares
                 catch (Exception ex)
                 {
                     // Clasificamos el nivel del log inteligentemente para Application Insights
-                    HandleLogByExceptionType(ex, context, userId, userEmail, tokenJti);
+                    HandleLogByExceptionType(ex, context, info);
 
                     await HandleExceptionAsync(context, ex);
                 }
-
             }
         }
 
-        private void HandleLogByExceptionType(Exception ex, HttpContext context, string userId, string userEmail, string tokenJti)
+        private void HandleLogByExceptionType(Exception ex, HttpContext context, ModelInfoError info)
         {   
             switch (ex)
             {
@@ -83,22 +70,7 @@ namespace Aurum.Api.Middlewares
                 default:
                     // Errores internos reales del servidor -> Error Crítico (Va directo a las alertas de Application Insights)
                     _logger.LogError(ex, "Ocurrió un error interno no controlado: {Message}", ex.Message);
-
-                    var telemetryClient = context.RequestServices.GetService<TelemetryClient>();
-                    if (telemetryClient != null)
-                    {
-                        var exceptionTelemetry = new Microsoft.ApplicationInsights.DataContracts.ExceptionTelemetry(ex)
-                        {
-                            SeverityLevel = Microsoft.ApplicationInsights.DataContracts.SeverityLevel.Error
-                        };
-
-                        exceptionTelemetry.Context.User.AuthenticatedUserId = userId;
-                        exceptionTelemetry.Properties["UserId"] = userId;
-                        exceptionTelemetry.Properties["UserEmail"] = userEmail;
-                        exceptionTelemetry.Properties["TokenJti"] = tokenJti;
-
-                        telemetryClient.TrackException(exceptionTelemetry);
-                    }
+                    SetTelemetryPersonalized(context, info, ex);
                     break;
             }
         }
@@ -162,37 +134,67 @@ namespace Aurum.Api.Middlewares
             var result = JsonSerializer.Serialize(errorResult, options);
             await context.Response.WriteAsync(result, context.RequestAborted);
         }
+    
+
+        private ModelInfoError SetModelInfoErrorTelemetry(HttpContext context)
+        {
+            // Extraemos la información de auditoría del usuario autenticado (si lo está)
+            string userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                         ?? context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value
+                         ?? context.User?.FindFirst("sub")?.Value
+                         ?? "Anonymous";
+
+            string userEmail = context.User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                          ?? context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email)?.Value
+                          ?? context.User?.FindFirst("email")?.Value
+                          ?? "N/A";
+
+            string tokenJti = context.User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value
+                           ?? context.User?.FindFirst("jti")?.Value
+                           ?? "N/A";
+
+            // Extraemos información del dispositivo y red desde los headers HTTP
+            string userAgent = context.Request.Headers["User-Agent"].ToString();
+            if (string.IsNullOrEmpty(userAgent)) userAgent = "N/A";
+
+            string clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "N/A";
+
+            return new ModelInfoError
+            {
+                userId = userId,
+                userEmail = userEmail,
+                tokenJti = tokenJti,
+                userAgent = userAgent,
+                clientIp = clientIp
+            };
+        }
+        private void SetTelemetryPersonalized(HttpContext context, ModelInfoError info, Exception ex)
+        {
+            var telemetryClient = context.RequestServices.GetService<TelemetryClient>();
+            if (telemetryClient != null)
+            {
+                var exceptionTelemetry = new Microsoft.ApplicationInsights.DataContracts.ExceptionTelemetry(ex)
+                {
+                    SeverityLevel = Microsoft.ApplicationInsights.DataContracts.SeverityLevel.Error
+                };
+
+                exceptionTelemetry.Context.User.AuthenticatedUserId = info.userId;
+                exceptionTelemetry.Properties["UserId"] = info.userId;
+                exceptionTelemetry.Properties["UserEmail"] = info.userEmail;
+                exceptionTelemetry.Properties["TokenJti"] = info.tokenJti;
+                exceptionTelemetry.Properties["UserAgent"] = info.userAgent;
+                exceptionTelemetry.Properties["ClientIp"] = info.clientIp;
+
+                telemetryClient.TrackException(exceptionTelemetry);
+            }
+        }
+        private struct ModelInfoError()
+        {
+            public string userId { get; set; } = string.Empty;
+            public string userEmail { get; set; } = string.Empty;
+            public string tokenJti { get; set; } = string.Empty;
+            public string userAgent { get; set; } = string.Empty;
+            public string clientIp { get; set; } = string.Empty;
+        }
     }
 }
-
-// 6. Excepciones de Base de Datos (Entity Framework / SQL)
-//case DbUpdateException dbEx:
-//    response.StatusCode = (int)HttpStatusCode.Conflict; // Por defecto asumimos conflicto (ej. duplicados)
-
-//    string dbMessage = "Ocurrió un error al guardar los datos en la base de datos.";
-
-//    // Opcional: Puedes inspeccionar la excepción interna (InnerException) para detectar códigos específicos de SQL Server
-//    if (dbEx.InnerException != null)
-//    {
-//        var innerMessage = dbEx.InnerException.Message;
-
-//        // Ejemplo para SQL Server: Violación de índice único / llave duplicada (Error 2627 o 2601)
-//        if (innerMessage.Contains("2627") || innerMessage.Contains("2601") || innerMessage.Contains("IX_") || innerMessage.Contains("UNIQUE"))
-//        {
-//            dbMessage = "Ya existe un registro con estos datos únicos en el sistema.";
-//        }
-//        // Ejemplo para Llaves Foráneas rotas (Error 547 en SQL Server)
-//        else if (innerMessage.Contains("547") || innerMessage.Contains("REFERENCE constraint"))
-//        {
-//            response.StatusCode = (int)HttpStatusCode.BadRequest;
-//            dbMessage = "La operación viola una regla de relación con otros datos existentes.";
-//        }
-//    }
-
-//    errorResponse = new
-//    {
-//        status = response.StatusCode,
-//        message = dbMessage,
-//        errors = (object)null
-//    };
-//    break;
