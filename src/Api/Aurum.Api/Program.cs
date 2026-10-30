@@ -5,7 +5,7 @@ using Aurum.External;
 using Aurum.Persistence;
 using Aurum.Persistence.Context;
 using Azure.Identity;
-using MediatR;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +31,12 @@ if (builder.Environment.IsProduction())
 }
 
 var app = builder.Build();
+
+// Configuración obligatoria para Azure App Service (Debe ir al principio absoluto)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 // Aplica migraciones automáticamente al arrancar de forma limpia (solo desarrollo)
 if (app.Environment.IsDevelopment())
