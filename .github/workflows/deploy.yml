@@ -54,9 +54,15 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:latest
 
-      - name: 8. Desplegar contenedor en Azure App Service
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: "as-aurum-dev-api-eus"
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: "acraurumdeveus-hmcndzgmf2hegvd3.azurecr.io/aurum-api:latest"
+      - name: 8. Actualizar imagen y reiniciar Azure App Service
+        run: |
+          # Configuramos el App Service para que utilice la nueva imagen del ACR
+          az webapp config container set \
+            --name as-aurum-dev-api-eus \
+            --resource-group rg-aurum-dev-eus \
+            --docker-custom-image-name acraurumdeveus-hmcndzgmf2hegvd3.azurecr.io/aurum-api:latest
+
+          # Forzamos el reinicio para que descargue inmediatamente la última versión
+          az webapp restart \
+            --name as-aurum-dev-api-eus \
+            --resource-group rg-aurum-dev-eus
