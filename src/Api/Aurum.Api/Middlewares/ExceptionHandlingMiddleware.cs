@@ -57,6 +57,16 @@ namespace Aurum.Api.Middlewares
                     // Clasificamos el nivel del log inteligentemente para Application Insights
                     HandleLogByExceptionType(ex);
 
+                    if (telemetryClient != null)
+                    {
+                        telemetryClient.TrackException(ex, new Dictionary<string, string>
+                        {
+                            ["UserId"] = userId,
+                            ["UserEmail"] = userEmail,
+                            ["TokenJti"] = tokenJti
+                        });
+                    }
+
                     await HandleExceptionAsync(context, ex);
                 }
 
